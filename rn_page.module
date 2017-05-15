@@ -1,0 +1,61 @@
+<?php
+
+/**
+ * @file
+ * Code for the rn_page feature.
+ */
+
+/**
+ * Реализация hook_menu().
+ * 
+ */
+function rn_page_menu() {
+  $items = array(); 
+  $items['drupal-test-task'] = array(
+    'title' => 'Список пользователей №1',
+    'description' => 'Вывод API',
+    'page callback' => '_page_user_list_api',
+    'access callback' => TRUE,
+    'expanded' => TRUE,
+    'type' => MENU_NORMAL_ITEM,
+    'menu_name' => 'main-menu',
+  );
+  return $items;
+}
+
+function _page_user_list_api() {
+  $perpage = 50;
+  $rows = array();
+
+  $header = array(
+    array('data' => 'UID', 'field' => 'uid'),
+    array('data' => 'Name', 'field' => 'name'),
+    array('data' => '', ''),
+  );
+
+  $nodes = db_select('users', 'usrs')
+      ->fields('usrs', array('uid', 'name'))
+      ->extend('PagerDefault')
+      ->limit(50)
+      ->extend('TableSort')
+      ->orderByHeader($header)
+      ->execute();
+
+  $rows = array();
+  foreach ($nodes as $node) { 
+    if ($node->uid > 0) {
+      $rows[] = array(
+        check_plain($node->uid),
+        check_plain($node->name),
+        '<a href="/user/' . $node->uid . '/edit">edit</a>'
+      );
+    }
+  }
+
+  $output = theme('table', array('header' => $header, 'rows' => $rows));
+  $output .= theme('pager');
+
+  return $output;
+}
+
+include_once 'rn_page.features.inc';
